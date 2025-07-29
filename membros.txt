@@ -1,0 +1,7 @@
+Nome,Funcoes,Disponibilidade,VezesEscalado,CantaEToca
+Ana Beatriz Lima,Baixo;Cantor,Domingo-19:00;Sábado-17:30,0,N
+Bruno Gomes Costa,Violão,Domingo-19:00;Quarta-19:00,0,N
+Carla Dias Martins,Teclado,Sábado-17:30;Domingo-07:30,0,N
+Daniel Oliveira Alves,Baixo,Domingo-19:00,0,N
+Gabriela Azevedo Barbosa,Cantor;Violão,Domingo-19:00;Domingo-07:30,0,S
+Felipe Souza Pereira,Bateria,Domingo-19:00;Sábado-17:30,0,N
