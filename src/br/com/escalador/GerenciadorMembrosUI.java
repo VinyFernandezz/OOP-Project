@@ -104,15 +104,15 @@ public class GerenciadorMembrosUI extends JDialog {
     private void carregarDadosDoMembroSelecionado() {
         Pessoa p = jListMembros.getSelectedValue();
         if (p != null) {
-            campoNome.setText(p.nome);
+            campoNome.setText(p.getNome());
             listModelFuncoes.clear();
-            p.funcoes.stream().sorted().forEach(listModelFuncoes::addElement);
-            
-            String dispTexto = p.disponibilidade.stream()
-                                                .map(d -> d.diaDaSemana + "-" + d.horario)
-                                                .collect(Collectors.joining("\n"));
+            p.getFuncoes().stream().sorted().forEach(listModelFuncoes::addElement);
+        
+            String dispTexto = p.getDisponibilidade().stream()
+                            .map(d -> d.diaDaSemana + "-" + d.horario)
+                            .collect(Collectors.joining("\n"));
             areaDisponibilidade.setText(dispTexto);
-            checkCantaEToca.setSelected(p.cantaEToca);
+            checkCantaEToca.setSelected(p.isCantaEToca());
         }
     }
     
@@ -148,23 +148,23 @@ public class GerenciadorMembrosUI extends JDialog {
     }
 
     private void atualizarDadosPessoaPeloFormulario(Pessoa p) {
-        p.funcoes.clear();
+        p.getFuncoes().clear();
         for (int i = 0; i < listModelFuncoes.size(); i++) {
-            p.funcoes.add(listModelFuncoes.getElementAt(i));
+            p.getFuncoes().add(listModelFuncoes.getElementAt(i));
         }
-        
-        p.disponibilidade.clear();
+    
+        p.getDisponibilidade().clear();
         String[] linhasDisp = areaDisponibilidade.getText().split("\n");
         for (String linha : linhasDisp) {
             String dispTrimmed = linha.trim();
             if (dispTrimmed.contains("-")) {
                 String[] partes = dispTrimmed.split("-", 2);
                 if (partes.length == 2 && !partes[0].isEmpty() && !partes[1].isEmpty()) {
-                    p.disponibilidade.add(new HorarioDisponivel(partes[0].trim(), partes[1].trim()));
+                    p.getDisponibilidade().add(new HorarioDisponivel(partes[0].trim(), partes[1].trim()));
                 }
             }
         }
-        p.cantaEToca = checkCantaEToca.isSelected();
+        p.setCantaEToca(checkCantaEToca.isSelected());
     }
 
     private void excluirMembro() {

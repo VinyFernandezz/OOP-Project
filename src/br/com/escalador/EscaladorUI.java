@@ -16,6 +16,8 @@ import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+import br.com.escalador.exceptions.EscalacaoException;
+
 public class EscaladorUI extends JFrame {
 
     private static final long serialVersionUID = 1L;
@@ -29,6 +31,7 @@ public class EscaladorUI extends JFrame {
     private Map<String, List<Pessoa>> todosOsCandidatosPorFuncao;
     private JPanel painelDefinirEvento;
     private JSplitPane splitPane;
+    private EscalacaoController controller;
 
     public EscaladorUI() {
         setTitle("Escalador");
@@ -41,6 +44,8 @@ public class EscaladorUI extends JFrame {
         setContentPane(painelPrincipal);
 
         gerenciadorMembros = new GerenciadorMembros();
+
+        this.controller = new EscalacaoController(this);
         
         // --- Painel do Cabeçalho ---
         JPanel painelCabecalho = new JPanel(new BorderLayout());
@@ -179,42 +184,33 @@ public class EscaladorUI extends JFrame {
      * Ponto de partida para a geração da escala.
      * Coleta os dados da UI, chama o GeradorDeEscala e atualiza os resultados.
      */
+    /**
+ * VERSÃO REFATORADA: Usa controller para separar responsabilidades.
+ */
     private void gerarEscalaCustomizada() {
-        this.todosOsMembros = gerenciadorMembros.carregarMembros("membros.txt");
         String diaSelecionado = (String) comboDiaSemana.getSelectedItem();
         String horario = (String) comboHorario.getSelectedItem();
-        
+    
         Map<String, Integer> necessidades = new LinkedHashMap<>();
         List<String> funcoesOrdenadasDaUI = new ArrayList<>(spinnersDeFuncao.keySet());
         funcoesOrdenadasDaUI.sort(getFuncaoComparator());
-        
+    
         for (String funcao : funcoesOrdenadasDaUI) {
             int qtd = (int) spinnersDeFuncao.get(funcao).getValue();
             if (qtd > 0) necessidades.put(funcao, qtd);
         }
-        
-        if (necessidades.isEmpty() || "Selecione o dia".equals(diaSelecionado) || "--:--".equals(horario) || horario.trim().isEmpty()) {
-            JOptionPane.showMessageDialog(this, "Por favor, selecione dia, horário e pelo menos uma função.", "Aviso", JOptionPane.WARNING_MESSAGE);
+    
+        if (necessidades.isEmpty() || "Selecione o dia".equals(diaSelecionado) || 
+            "--:--".equals(horario) || horario.trim().isEmpty()) {
+            JOptionPane.showMessageDialog(this, 
+                "Por favor, selecione dia, horário e pelo menos uma função.", 
+                "Aviso", JOptionPane.WARNING_MESSAGE);
             return;
         }
-        
-        Evento evento = new Evento("Culto de " + diaSelecionado, diaSelecionado, horario, necessidades);
-        
-        GeradorDeEscala gerador = new GeradorDeEscala();
-        evento = gerador.gerar(evento, todosOsMembros);
-
-        // REGRA D: Incrementa o contador para os escolhidos na geração automática.
-        Set<Pessoa> pessoasEscaladas = new HashSet<>();
-        for(List<Pessoa> lista : evento.escalaPronta.values()){
-            pessoasEscaladas.addAll(lista);
-        }
-        for(Pessoa p : pessoasEscaladas){
-            p.vezesEscalado++;
-        }
-        
-        List<Pessoa> candidatosGerais = gerador.getCandidatosGerais();
-        atualizarPainelDeResultados(evento, candidatosGerais);
-    }
+    
+    // Delega para o controller
+    controller.gerarNovaEscala(diaSelecionado, horario, necessidades);
+}
 
     /**
      * Desenha o painel de resultados com os JComboBoxes para cada vaga.
@@ -296,6 +292,20 @@ public class EscaladorUI extends JFrame {
     }
 
     /**
+    * Converte seleções globais para formato do validador.
+    */
+    private Map<String, List<Pessoa>> converterParaMapaGlobal(Map<Pessoa, List<String>> selecoesGlobais) {
+        Map<String, List<Pessoa>> mapa = new HashMap<>();
+        for (Map.Entry<Pessoa, List<String>> entry : selecoesGlobais.entrySet()) {
+            Pessoa pessoa = entry.getKey();
+            for (String funcao : entry.getValue()) {
+                mapa.computeIfAbsent(funcao, k -> new ArrayList<>()).add(pessoa);
+            }
+        }
+        return mapa;
+    }
+
+    /**
      * REGRA F: ATUALIZAÇÃO DINÂMICA DE DISPONIBILIDADE
      * Este método é o núcleo da lógica de edição manual da escala.
      * Ele é chamado sempre que uma seleção em qualquer JComboBox é alterada.
@@ -343,9 +353,11 @@ public class EscaladorUI extends JFrame {
                 if (todasAsOpcoesParaFuncao != null) {
                     for (Pessoa pessoaCandidata : todasAsOpcoesParaFuncao) {
                         // A pessoa que já está neste combo sempre é uma opção válida para si mesma.
-                        if (pessoaCandidata.equals(selecaoAtualDoCombo)) {
+                        // Usa o controller para validar
+                        if (pessoaCandidata.equals(selecaoAtualDoCombo) || 
+                            controller.validarSelecaoManual(pessoaCandidata, funcaoAtualDoCombo, 
+                                                            converterParaMapaGlobal(selecoesGlobais))) {
                             model.addElement(pessoaCandidata);
-                            continue; 
                         }
 
                         List<String> funcoesJaEscaladas = selecoesGlobais.get(pessoaCandidata);
@@ -397,6 +409,13 @@ public class EscaladorUI extends JFrame {
         }
     }
     
+    /**
+    * Método público para o controller atualizar a UI.
+    */
+    public void atualizarResultados(Evento evento, List<Pessoa> candidatos) {
+        atualizarPainelDeResultados(evento, candidatos);
+    }
+
     public static void main(String[] args) {
         try {
             UIManager.setLookAndFeel(new FlatDarkLaf());

@@ -27,26 +27,29 @@ public class GerenciadorMembros {
                     Pessoa p = new Pessoa(dados[0].trim());
 
                     if(!dados[1].trim().isEmpty()){
-                       p.funcoes.addAll(Arrays.asList(dados[1].split(";")));
+                        p.getFuncoes().addAll(Arrays.asList(dados[1].split(";")));
                     }
-                    
+
                     if(!dados[2].trim().isEmpty()){
                         String[] dispArray = dados[2].split(";");
                         for (String disp : dispArray) {
                             String[] diaHora = disp.trim().split("-", 2);
-                            if (diaHora.length == 2) {
-                                p.disponibilidade.add(new HorarioDisponivel(diaHora[0].trim(), diaHora[1].trim()));
-                            }
+                                if (diaHora.length == 2) {
+                                    p.getDisponibilidade().add(new HorarioDisponivel(diaHora[0].trim(), diaHora[1].trim()));
+                                }
                         }
+                    }                   
+                    // Usar o método da superclasse para vezesEscalado
+                    while(p.getVezesEscalado() < Integer.parseInt(dados[3].trim())) {
+                        p.incrementarEscalacao();
                     }
-                    p.vezesEscalado = Integer.parseInt(dados[3].trim());
-                    p.cantaEToca = dados[4].trim().equalsIgnoreCase("S");
-                    membros.add(p);
+                    p.setCantaEToca(dados[4].trim().equalsIgnoreCase("S"));
+
                 }
-            }
+            } 
         } catch (IOException | NumberFormatException e) {
-            System.err.println("Erro ao ler o arquivo de membros: " + e.getMessage());
-        }
+                System.err.println("Erro ao ler o arquivo de membros: " + e.getMessage());
+                }
         return membros;
     }
 
@@ -55,13 +58,14 @@ public class GerenciadorMembros {
             writer.write("Nome,Funcoes,Disponibilidade,VezesEscalado,CantaEToca\n"); 
 
             for (Pessoa p : membros) {
-                String funcoes = String.join(";", p.funcoes);
-                String disponibilidade = p.disponibilidade.stream()
-                                                          .map(d -> d.diaDaSemana + "-" + d.horario)
-                                                          .collect(Collectors.joining(";"));
-                String cantaEToca = p.cantaEToca ? "S" : "N";
+                String funcoes = String.join(";", p.getFuncoes());
+                String disponibilidade = p.getDisponibilidade().stream()
+                                      .map(d -> d.diaDaSemana + "-" + d.horario)
+                                      .collect(Collectors.joining(";"));
+                String cantaEToca = p.isCantaEToca() ? "S" : "N";
 
-                writer.write(String.format("%s,%s,%s,%d,%s\n", p.nome, funcoes, disponibilidade, p.vezesEscalado, cantaEToca));
+                writer.write(String.format("%s,%s,%s,%d,%s\n", 
+                p.getNome(), funcoes, disponibilidade, p.getVezesEscalado(), cantaEToca));
             }
         } catch (IOException e) {
             System.err.println("Erro ao salvar o arquivo de membros: " + e.getMessage());
