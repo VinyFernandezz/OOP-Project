@@ -26,30 +26,42 @@ public class GerenciadorMembros {
                 if (dados.length == 5) {
                     Pessoa p = new Pessoa(dados[0].trim());
 
+                    // Funções
                     if(!dados[1].trim().isEmpty()){
                         p.getFuncoes().addAll(Arrays.asList(dados[1].split(";")));
                     }
 
+                    // Disponibilidade
                     if(!dados[2].trim().isEmpty()){
                         String[] dispArray = dados[2].split(";");
                         for (String disp : dispArray) {
                             String[] diaHora = disp.trim().split("-", 2);
-                                if (diaHora.length == 2) {
-                                    p.getDisponibilidade().add(new HorarioDisponivel(diaHora[0].trim(), diaHora[1].trim()));
-                                }
+                            if (diaHora.length == 2) {
+                                p.getDisponibilidade().add(new HorarioDisponivel(diaHora[0].trim(), diaHora[1].trim()));
+                            }
                         }
                     }                   
-                    // Usar o método da superclasse para vezesEscalado
-                    while(p.getVezesEscalado() < Integer.parseInt(dados[3].trim())) {
-                        p.incrementarEscalacao();
+                    
+                    // Vezes escalado
+                    try {
+                        int vezesEscalado = Integer.parseInt(dados[3].trim());
+                        while(p.getVezesEscalado() < vezesEscalado) {
+                            p.incrementarEscalacao();
+                        }
+                    } catch (NumberFormatException e) {
+                        System.err.println("Erro ao converter vezesEscalado para " + dados[0] + ": " + e.getMessage());
                     }
+                    
+                    // Canta e toca
                     p.setCantaEToca(dados[4].trim().equalsIgnoreCase("S"));
 
+                    // CORREÇÃO CRÍTICA: Adicionar a pessoa à lista DENTRO do if
+                    membros.add(p);
                 }
             } 
-        } catch (IOException | NumberFormatException e) {
-                System.err.println("Erro ao ler o arquivo de membros: " + e.getMessage());
-                }
+        } catch (IOException e) {
+            System.err.println("Erro ao ler o arquivo de membros: " + e.getMessage());
+        }
         return membros;
     }
 

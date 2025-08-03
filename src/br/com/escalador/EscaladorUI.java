@@ -44,7 +44,6 @@ public class EscaladorUI extends JFrame {
         setContentPane(painelPrincipal);
 
         gerenciadorMembros = new GerenciadorMembros();
-
         this.controller = new EscalacaoController(this);
         
         // --- Painel do Cabeçalho ---
@@ -167,13 +166,11 @@ public class EscaladorUI extends JFrame {
     private void abrirGerenciadorMembros() {
         this.todosOsMembros = gerenciadorMembros.carregarMembros("membros.txt");
         GerenciadorMembrosUI gerenciadorUI = new GerenciadorMembrosUI(this, this.todosOsMembros);
-        gerenciadorUI.setVisible(true); // A execução para aqui até a janela ser fechada
+        gerenciadorUI.setVisible(true);
         
-        // Quando a janela fechar, salva os membros e atualiza a UI
         gerenciadorMembros.salvarMembros("membros.txt", this.todosOsMembros);
         JOptionPane.showMessageDialog(this, "Lista de membros salva!");
         
-        // Recria o painel de entrada para refletir novas funções
         this.painelDefinirEvento = montarPainelDeEntrada();
         splitPane.setTopComponent(this.painelDefinirEvento);
         revalidate();
@@ -182,11 +179,7 @@ public class EscaladorUI extends JFrame {
     
     /**
      * Ponto de partida para a geração da escala.
-     * Coleta os dados da UI, chama o GeradorDeEscala e atualiza os resultados.
      */
-    /**
- * VERSÃO REFATORADA: Usa controller para separar responsabilidades.
- */
     private void gerarEscalaCustomizada() {
         String diaSelecionado = (String) comboDiaSemana.getSelectedItem();
         String horario = (String) comboHorario.getSelectedItem();
@@ -208,9 +201,8 @@ public class EscaladorUI extends JFrame {
             return;
         }
     
-    // Delega para o controller
-    controller.gerarNovaEscala(diaSelecionado, horario, necessidades);
-}
+        controller.gerarNovaEscala(diaSelecionado, horario, necessidades);
+    }
 
     /**
      * Desenha o painel de resultados com os JComboBoxes para cada vaga.
@@ -264,6 +256,9 @@ public class EscaladorUI extends JFrame {
                 
                 this.todosOsComboBoxes.computeIfAbsent(funcao, k -> new ArrayList<>()).add(comboBox);
                 
+                // LISTENER CORRETO: Adiciona o listener ANTES da atualização inicial
+                comboBox.addActionListener(e -> atualizarOpcoesDosCombos());
+                
                 JPanel painelCombo = new JPanel(new BorderLayout(5, 0));
                 painelCombo.add(new JLabel("Vaga " + (i + 1) + ":"), BorderLayout.WEST);
                 painelCombo.add(comboBox, BorderLayout.CENTER);
@@ -276,15 +271,7 @@ public class EscaladorUI extends JFrame {
         gbc.gridy++; gbc.weighty = 1.0;
         painelDeResultados.add(new JLabel(""), gbc);
 
-        // Adiciona os listeners que chamarão a atualização das regras a cada mudança
-        for (List<JComboBox<Pessoa>> combos : this.todosOsComboBoxes.values()) {
-            for (JComboBox<Pessoa> combo : combos) {
-                // Cada vez que uma seleção mudar, o método de atualização é chamado.
-                combo.addActionListener(e -> atualizarOpcoesDosCombos());
-            }
-        }
-        
-        // Roda a atualização pela primeira vez para definir o estado inicial correto.
+        // Atualização inicial das opções
         atualizarOpcoesDosCombos();
 
         painelDeResultados.revalidate();
@@ -292,8 +279,8 @@ public class EscaladorUI extends JFrame {
     }
 
     /**
-    * Converte seleções globais para formato do validador.
-    */
+     * Converte seleções globais para formato do validador.
+     */
     private Map<String, List<Pessoa>> converterParaMapaGlobal(Map<Pessoa, List<String>> selecoesGlobais) {
         Map<String, List<Pessoa>> mapa = new HashMap<>();
         for (Map.Entry<Pessoa, List<String>> entry : selecoesGlobais.entrySet()) {
@@ -306,22 +293,12 @@ public class EscaladorUI extends JFrame {
     }
 
     /**
-     * REGRA F: ATUALIZAÇÃO DINÂMICA DE DISPONIBILIDADE
-     * Este método é o núcleo da lógica de edição manual da escala.
-     * Ele é chamado sempre que uma seleção em qualquer JComboBox é alterada.
-     * Sua estratégia é:
-     * 1. Mapear todas as seleções atuais (quem está escalado e onde).
-     * 2. Iterar sobre CADA JComboBox da tela.
-     * 3. Para cada JComboBox, reconstruir sua lista de opções do zero, verificando
-     * para cada membro se ele pode ser alocado naquela função, dadas as
-     * outras seleções já feitas.
-     * Isso garante que, se um membro é selecionado, ele some das listas incompatíveis,
-     * e se ele é removido, ele reapareça nas listas onde agora é elegível.
+     * MÉTODO CORRIGIDO: Atualização dinâmica de disponibilidade
      */
     private void atualizarOpcoesDosCombos() {
         if (todosOsComboBoxes == null || todosOsComboBoxes.isEmpty()) return;
 
-        // 1. Mapeia quem está atualmente selecionado e em quais funções.
+        // 1. Mapeia quem está atualmente selecionado e em quais funções
         Map<Pessoa, List<String>> selecoesGlobais = new HashMap<>();
         for (Map.Entry<String, List<JComboBox<Pessoa>>> entry : todosOsComboBoxes.entrySet()) {
             String funcao = entry.getKey();
@@ -332,10 +309,8 @@ public class EscaladorUI extends JFrame {
                 }
             }
         }
-        
-        List<String> instrumentos = List.of("Violão", "Teclado", "Baixo", "Guitarra", "Bateria");
 
-        // 2. Itera sobre cada combo box para revalidar suas opções.
+        // 2. Para cada combo box, reconstrói as opções válidas
         for (Map.Entry<String, List<JComboBox<Pessoa>>> entry : todosOsComboBoxes.entrySet()) {
             String funcaoAtualDoCombo = entry.getKey();
             List<Pessoa> todasAsOpcoesParaFuncao = this.todosOsCandidatosPorFuncao.get(funcaoAtualDoCombo);
@@ -343,75 +318,50 @@ public class EscaladorUI extends JFrame {
             for (JComboBox<Pessoa> comboAlvo : entry.getValue()) {
                 Pessoa selecaoAtualDoCombo = (Pessoa) comboAlvo.getSelectedItem();
 
+                // Remove listeners temporariamente para evitar loops infinitos
                 ActionListener[] listeners = comboAlvo.getActionListeners();
                 for (ActionListener l : listeners) comboAlvo.removeActionListener(l);
 
-                // 3. Reconstrói a lista de opções para este JComboBox.
+                // Reconstrói o modelo do combo
                 DefaultComboBoxModel<Pessoa> model = new DefaultComboBoxModel<>();
-                model.addElement(null); // Opção para deixar vago
+                model.addElement(null); // Opção vazia
 
                 if (todasAsOpcoesParaFuncao != null) {
                     for (Pessoa pessoaCandidata : todasAsOpcoesParaFuncao) {
-                        // A pessoa que já está neste combo sempre é uma opção válida para si mesma.
-                        // Usa o controller para validar
-                        if (pessoaCandidata.equals(selecaoAtualDoCombo) || 
-                            controller.validarSelecaoManual(pessoaCandidata, funcaoAtualDoCombo, 
-                                                            converterParaMapaGlobal(selecoesGlobais))) {
-                            model.addElement(pessoaCandidata);
-                        }
-
-                        List<String> funcoesJaEscaladas = selecoesGlobais.get(pessoaCandidata);
-
-                        // Se a pessoa não foi escalada em nenhum outro lugar, ela é elegível.
-                        if (funcoesJaEscaladas == null || funcoesJaEscaladas.isEmpty()) {
+                        // A pessoa já selecionada neste combo sempre pode permanecer
+                        if (pessoaCandidata.equals(selecaoAtualDoCombo)) {
                             model.addElement(pessoaCandidata);
                             continue;
                         }
 
-                        // REGRA F.3 (e Regra A): Se não canta e toca, e já está escalado, não pode ser escalado de novo.
-                        if (!pessoaCandidata.cantaEToca) {
-                            continue; // BLOQUEADO: Pessoa já está em uma função e não pode acumular.
-                        }
+                        // Cria uma cópia das seleções sem esta pessoa para testar
+                        Map<String, List<Pessoa>> escalaParaTeste = converterParaMapaGlobal(selecoesGlobais);
                         
-                        // Daqui pra baixo, a pessoa PODE cantar e tocar. Vamos verificar as outras regras.
-                        boolean candidatoJaTocaInstrumento = funcoesJaEscaladas.stream().anyMatch(instrumentos::contains);
-                        boolean funcaoAlvoEhInstrumento = instrumentos.contains(funcaoAtualDoCombo);
-
-                        // REGRA F.1 (e Regra B): Não pode tocar dois instrumentos.
-                        if (candidatoJaTocaInstrumento && funcaoAlvoEhInstrumento) {
-                            continue; // BLOQUEADO: Já toca um instrumento, não pode tocar outro.
-                        }
-                        
-                        // REGRA GERAL DE EXCLUSIVIDADE: Permite apenas a combinação "Cantor" + 1 Instrumento.
-                        boolean jaEhCantor = funcoesJaEscaladas.contains("Cantor");
-                        boolean funcaoAlvoEhCantor = funcaoAtualDoCombo.equals("Cantor");
-
-                        // Se a pessoa já está em duas funções (o máximo), bloqueia.
-                        if (funcoesJaEscaladas.size() >= 2) {
-                             continue; // BLOQUEADO: Já está no limite de 2 funções.
-                        }
-                        
-                        // Bloqueia qualquer combinação que não seja Cantor + Instrumento.
-                        if ( (jaEhCantor && !funcaoAlvoEhInstrumento) || (candidatoJaTocaInstrumento && !funcaoAlvoEhCantor) ){
-                           continue; // BLOQUEADO: Tentativa de acumular funções incompatíveis.
+                        // Remove a pessoa atual deste combo da escala de teste (se estava selecionada)
+                        if (selecaoAtualDoCombo != null) {
+                            escalaParaTeste.forEach((f, lista) -> lista.remove(selecaoAtualDoCombo));
                         }
 
-                        // Se passou por todas as regras, é uma opção válida.
-                        model.addElement(pessoaCandidata);
+                        // Testa se a pessoa candidata pode ser escalada
+                        if (controller.validarSelecaoManual(pessoaCandidata, funcaoAtualDoCombo, escalaParaTeste)) {
+                            model.addElement(pessoaCandidata);
+                        }
                     }
                 }
 
+                // Aplica o novo modelo e restaura a seleção
                 comboAlvo.setModel(model);
                 comboAlvo.setSelectedItem(selecaoAtualDoCombo);
 
+                // Restaura os listeners
                 for (ActionListener l : listeners) comboAlvo.addActionListener(l);
             }
         }
     }
     
     /**
-    * Método público para o controller atualizar a UI.
-    */
+     * Método público para o controller atualizar a UI.
+     */
     public void atualizarResultados(Evento evento, List<Pessoa> candidatos) {
         atualizarPainelDeResultados(evento, candidatos);
     }

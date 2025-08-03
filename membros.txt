@@ -1,1 +1,9 @@
 Nome,Funcoes,Disponibilidade,VezesEscalado,CantaEToca
+João Silva,Cantor;Violão,Domingo-19:00;Quarta-19:00,2,S
+Maria Santos,Cantor,Domingo-19:00;Domingo-17:00,2,N
+Pedro Costa,Teclado;Baixo,Domingo-19:00;Quinta-19:00,3,N
+Ana Lima,Cantor;Guitarra,Domingo-19:00;Terça-19:00;Quinta-19:00,2,S
+Carlos Mendes,Bateria,Domingo-19:00;Sábado-17:00,3,N
+Lucia Fernandes,Mesa de Som,Domingo-19:00;Quarta-19:00,1,N
+Rafael Oliveira,DataShow;Mesa de Som,Domingo-19:00;Domingo-17:00,0,N
+Juliana Rocha,Cantor,Domingo-19:00;Segunda-19:00,2,N
