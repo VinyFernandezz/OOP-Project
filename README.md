@@ -4,7 +4,7 @@ Um sistema desktop para gerenciamento e escalação automática de membros de gr
 
 ## 📋 Sobre o Projeto
 
-O **Escalador** é uma aplicação que automatiza o processo de criação de escalas musicais para cultos, missas e eventos, considerando a disponibilidade dos membros, suas funções e regras específicas do ministério de música.
+O **Escalador** é uma aplicação que automatiza o processo de criação de escalas musicais para cultos e eventos, considerando a disponibilidade dos membros, suas funções e regras específicas do ministério de música.
 
 ### 🎯 Funcionalidades Principais
 
@@ -29,29 +29,41 @@ O projeto segue princípios de **Programação Orientada a Objetos** e implement
 ### 📁 Estrutura de Pacotes
 ```
 src/br/com/escalador/
-├── controllers/          # Controladores (MVC)
 ├── exceptions/           # Exceções customizadas
-├── models/              # Modelos de dados
-├── services/            # Lógica de negócio
-├── ui/                  # Interface gráfica
-└── utils/               # Utilitários
+│   ├── EscalacaoException.java
+│   └── ValidacaoException.java
+├── ComboBoxRenderer.java        # Renderizador customizado para UI
+├── ConfiguracaoEscala.java      # Configurações e constantes
+├── EscalacaoController.java     # Controlador (padrão MVC)
+├── EscalacaoService.java        # Serviços de escalação
+├── EscaladorUI.java             # Interface principal
+├── Escalavel.java               # Interface para entidades escaláveis
+├── Evento.java                  # Modelo de evento
+├── GeradorDeEscala.java         # Lógica de geração de escalas
+├── GerenciadorMembros.java      # Persistência de dados
+├── GerenciadorMembrosUI.java    # Interface de gerenciamento
+├── HorarioDisponivel.java       # Modelo de horário
+├── Participante.java            # Superclasse abstrata
+├── Pessoa.java                  # Modelo principal de pessoa
+└── ValidadorEscalacao.java      # Validação de regras
 ```
 
 ### 🎨 Padrões Implementados
 
-- **MVC (Model-View-Controller)**: Separação clara de responsabilidades
-- **Singleton**: Para configurações globais
-- **Strategy**: Para diferentes algoritmos de escalação
-- **Observer**: Para atualização da interface
+- **MVC (Model-View-Controller)**: Separação de responsabilidades entre UI, lógica e dados
+- **Singleton**: Para configurações globais (`ConfiguracaoEscala`)
+- **Service Layer**: Encapsulamento da lógica de negócio (`EscalacaoService`)
+- **Strategy Pattern**: Diferentes algoritmos de validação (`ValidadorEscalacao`)
 
 ### 🔧 Recursos OOP Implementados
 
-- ✅ **Herança**: `Pessoa` herda de `Participante`
+- ✅ **Herança**: `Pessoa` herda de `Participante` (superclasse abstrata)
 - ✅ **Polimorfismo**: Sobrescrita de métodos com `@Override`
-- ✅ **Encapsulamento**: Atributos privados com getters/setters
-- ✅ **Abstração**: Classes abstratas e interfaces
-- ✅ **Composição**: Relacionamentos entre objetos
-- ✅ **Tratamento de Exceções**: Exceções customizadas
+- ✅ **Encapsulamento**: Atributos privados/package-private com getters/setters
+- ✅ **Abstração**: Classe abstrata `Participante` e interface `Escalavel`
+- ✅ **Composição**: Relacionamentos entre objetos (Pessoa → HorarioDisponivel)
+- ✅ **Tratamento de Exceções**: Hierarquia de exceções customizadas
+- ✅ **Static/Final**: Constantes e singleton em `ConfiguracaoEscala`
 
 ## 🚀 Como Executar
 
@@ -71,14 +83,19 @@ src/br/com/escalador/
    - O arquivo deve estar na raiz do projeto
    - Caso não exista, será criado automaticamente
 
-3. **Execute a aplicação**
+3. **Compile e execute a aplicação**
    ```bash
-   # Via linha de comando
-   javac -cp "lib/*:src" src/br/com/escalador/EscaladorUI.java
-   java -cp "lib/*:src" br.com.escalador.EscaladorUI
+   # Via linha de comando (certifique-se de ter o flatlaf-3.6.jar no classpath)
+   javac -cp "flatlaf-3.6.jar:src" src/br/com/escalador/*.java src/br/com/escalador/exceptions/*.java
+   java -cp "flatlaf-3.6.jar:src" br.com.escalador.EscaladorUI
    
-   # Ou execute diretamente pela IDE
+   # Ou execute diretamente pela IDE (Eclipse/IntelliJ)
+   # Certifique-se de adicionar flatlaf-3.6.jar às dependências
    ```
+
+4. **Dependências necessárias**
+   - `flatlaf-3.6.jar` (incluído no projeto)
+   - Java 17 ou superior
 
 ## 📖 Manual de Uso
 
