@@ -4,10 +4,6 @@ Um sistema desktop para gerenciamento e escalação automática de membros de gr
 
 ![Screenshot da aplicação](screenshots/screenshot_escalador.png)
 
-<<<<<<< HEAD
-
-=======
->>>>>>> 37a703f4fa0f506645b4a5e664283acc4a0d43de
 ## 📋 Sobre o Projeto
 
 O **Escalador** é uma aplicação que automatiza o processo de criação de escalas musicais para cultos e eventos, considerando a disponibilidade dos membros, suas funções e regras específicas do ministério de música.
