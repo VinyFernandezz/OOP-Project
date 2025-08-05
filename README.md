@@ -2,6 +2,8 @@
 
 Um sistema desktop para gerenciamento e escalação automática de membros de grupos musicais paroquiais, desenvolvido em Java com interface Swing.
 
+![Screenshot da aplicação](screenshots/screenshot_escalador.png)
+
 ## 📋 Sobre o Projeto
 
 O **Escalador** é uma aplicação que automatiza o processo de criação de escalas musicais para cultos e eventos, considerando a disponibilidade dos membros, suas funções e regras específicas do ministério de música.
