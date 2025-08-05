@@ -2,7 +2,7 @@
 
 Um sistema desktop para gerenciamento e escalação automática de membros de grupos musicais paroquiais, desenvolvido em Java com interface Swing.
 
-![Screenshot da aplicação](screenshots/screenshot_escalador.png)
+![Screenshot da aplicação](screenshots/screenshot.png)
 
 ## 📋 Sobre o Projeto
 
