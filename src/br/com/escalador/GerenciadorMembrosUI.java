@@ -1,6 +1,7 @@
 package br.com.escalador;
 
 import javax.swing.*;
+import javax.swing.border.EmptyBorder;
 import java.awt.*;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -20,14 +21,29 @@ public class GerenciadorMembrosUI extends JDialog {
     private JTextField campoNome;
     private JList<String> jListFuncoes;
     private DefaultListModel<String> listModelFuncoes;
-    private JTextArea areaDisponibilidade;
+    
+    // NOVOS COMPONENTES PARA DISPONIBILIDADE
+    private JComboBox<String> comboDiaSemana;
+    private JComboBox<String> comboHorario;
+    private JList<HorarioDisponivel> jListDisponibilidade;
+    private DefaultListModel<HorarioDisponivel> listModelDisponibilidade;
+    
     private JCheckBox checkCantaEToca;
+    
+    // Arrays com as opções pré-definidas
+    private final String[] DIAS_SEMANA = {
+        "Domingo", "Segunda", "Terça", "Quarta", "Quinta", "Sexta", "Sábado"
+    };
+    
+    private final String[] HORARIOS = {
+        "06:30", "07:30", "17:00", "17:30", "19:00", "19:30", "20:00"
+    };
     
     public GerenciadorMembrosUI(Frame owner, List<Pessoa> membros) {
         super(owner, "Gerenciador de Membros", true);
         this.listaDePessoas = membros;
 
-        setSize(850, 600);
+        setSize(900, 650); // Aumentei um pouco para acomodar os novos componentes
         setLocationRelativeTo(owner);
         setLayout(new BorderLayout(10, 10));
 
@@ -36,50 +52,13 @@ public class GerenciadorMembrosUI extends JDialog {
         listaDePessoas.forEach(listModelPessoas::addElement);
         jListMembros = new JList<>(listModelPessoas);
         jListMembros.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
-        add(new JScrollPane(jListMembros), BorderLayout.WEST);
-
-        // --- Formulário de Edição (Direita) ---
-        JPanel painelFormulario = new JPanel(new GridBagLayout());
-        painelFormulario.setBorder(BorderFactory.createTitledBorder("Dados do Membro"));
-        GridBagConstraints gbc = new GridBagConstraints();
-        gbc.insets = new Insets(5, 5, 5, 5);
-        gbc.fill = GridBagConstraints.HORIZONTAL;
         
-        // Nome
-        gbc.gridx = 0; gbc.gridy = 0; painelFormulario.add(new JLabel("Nome:"), gbc);
-        gbc.gridx = 1; gbc.gridy = 0; gbc.weightx = 1.0;
-        campoNome = new JTextField(20);
-        painelFormulario.add(campoNome, gbc);
+        JScrollPane scrollMembros = new JScrollPane(jListMembros);
+        scrollMembros.setPreferredSize(new Dimension(200, 0));
+        add(scrollMembros, BorderLayout.WEST);
 
-        // Funções (NOVO LAYOUT)
-        gbc.gridx = 0; gbc.gridy = 1; painelFormulario.add(new JLabel("Funções:"), gbc);
-        gbc.gridx = 1; gbc.gridy = 1; gbc.weighty = 0.4; gbc.fill = GridBagConstraints.BOTH;
-        listModelFuncoes = new DefaultListModel<>();
-        jListFuncoes = new JList<>(listModelFuncoes);
-        painelFormulario.add(new JScrollPane(jListFuncoes), gbc);
-
-        // Botões para Funções
-        JPanel painelBotoesFuncao = new JPanel(new FlowLayout(FlowLayout.RIGHT));
-        JButton btnAddFuncao = new JButton("Adicionar...");
-        JButton btnRemFuncao = new JButton("Remover");
-        painelBotoesFuncao.add(btnAddFuncao);
-        painelBotoesFuncao.add(btnRemFuncao);
-        gbc.gridx = 1; gbc.gridy = 2; gbc.weighty = 0; gbc.fill = GridBagConstraints.HORIZONTAL;
-        painelFormulario.add(painelBotoesFuncao, gbc);
-
-        // Disponibilidade
-        gbc.gridx = 0; gbc.gridy = 3; gbc.anchor = GridBagConstraints.NORTH;
-        painelFormulario.add(new JLabel("Disponibilidade (Dia-HH:mm por linha):"), gbc);
-        gbc.gridx = 1; gbc.gridy = 3; gbc.weighty = 0.6; gbc.fill = GridBagConstraints.BOTH;
-        areaDisponibilidade = new JTextArea(10, 20);
-        painelFormulario.add(new JScrollPane(areaDisponibilidade), gbc);
-        
-        // Checkbox Canta e Toca
-        gbc.gridx = 0; gbc.gridy = 4; gbc.gridwidth = 2; gbc.weighty = 0;
-        gbc.fill = GridBagConstraints.NONE; gbc.anchor = GridBagConstraints.WEST;
-        checkCantaEToca = new JCheckBox("Consegue cantar e tocar ao mesmo tempo");
-        painelFormulario.add(checkCantaEToca, gbc);
-        
+        // --- Formulário de Edição (Centro) ---
+        JPanel painelFormulario = criarPainelFormulario();
         add(painelFormulario, BorderLayout.CENTER);
         
         // --- Botões de Ação (Inferior) ---
@@ -97,34 +76,235 @@ public class GerenciadorMembrosUI extends JDialog {
         btnNovo.addActionListener(e -> limparFormularioParaNovoMembro());
         btnSalvar.addActionListener(e -> salvarAlteracoes());
         btnExcluir.addActionListener(e -> excluirMembro());
-        btnAddFuncao.addActionListener(e -> adicionarFuncoes());
-        btnRemFuncao.addActionListener(e -> removerFuncaoSelecionada());
     }
     
+    /**
+     * Cria o painel principal do formulário com layout melhorado
+     */
+    private JPanel criarPainelFormulario() {
+        JPanel painelFormulario = new JPanel(new GridBagLayout());
+        painelFormulario.setBorder(BorderFactory.createTitledBorder("Dados do Membro"));
+        GridBagConstraints gbc = new GridBagConstraints();
+        gbc.insets = new Insets(5, 5, 5, 5);
+        gbc.fill = GridBagConstraints.HORIZONTAL;
+        
+        // Nome
+        gbc.gridx = 0; gbc.gridy = 0; gbc.anchor = GridBagConstraints.WEST;
+        painelFormulario.add(new JLabel("Nome:"), gbc);
+        gbc.gridx = 1; gbc.gridy = 0; gbc.weightx = 1.0;
+        campoNome = new JTextField(25);
+        painelFormulario.add(campoNome, gbc);
+
+        // Funções
+        gbc.gridx = 0; gbc.gridy = 1; gbc.weightx = 0; gbc.anchor = GridBagConstraints.NORTHWEST;
+        painelFormulario.add(new JLabel("Funções:"), gbc);
+        gbc.gridx = 1; gbc.gridy = 1; gbc.weighty = 0.3; gbc.fill = GridBagConstraints.BOTH;
+        
+        JPanel painelFuncoes = criarPainelFuncoes();
+        painelFormulario.add(painelFuncoes, gbc);
+
+        // Disponibilidade - NOVA SEÇÃO MELHORADA
+        gbc.gridx = 0; gbc.gridy = 2; gbc.weighty = 0; gbc.fill = GridBagConstraints.HORIZONTAL;
+        gbc.anchor = GridBagConstraints.NORTHWEST;
+        painelFormulario.add(new JLabel("Disponibilidade:"), gbc);
+        gbc.gridx = 1; gbc.gridy = 2; gbc.weighty = 0.4; gbc.fill = GridBagConstraints.BOTH;
+        
+        JPanel painelDisponibilidade = criarPainelDisponibilidade();
+        painelFormulario.add(painelDisponibilidade, gbc);
+        
+        // Checkbox Canta e Toca
+        gbc.gridx = 0; gbc.gridy = 3; gbc.gridwidth = 2; gbc.weighty = 0;
+        gbc.fill = GridBagConstraints.NONE; gbc.anchor = GridBagConstraints.WEST;
+        checkCantaEToca = new JCheckBox("Consegue cantar e tocar ao mesmo tempo");
+        painelFormulario.add(checkCantaEToca, gbc);
+        
+        return painelFormulario;
+    }
+    
+    /**
+     * Cria painel para gerenciamento de funções
+     */
+    private JPanel criarPainelFuncoes() {
+        JPanel painel = new JPanel(new BorderLayout(5, 5));
+        
+        // Lista de funções
+        listModelFuncoes = new DefaultListModel<>();
+        jListFuncoes = new JList<>(listModelFuncoes);
+        jListFuncoes.setSelectionMode(ListSelectionModel.MULTIPLE_INTERVAL_SELECTION);
+        JScrollPane scrollFuncoes = new JScrollPane(jListFuncoes);
+        painel.add(scrollFuncoes, BorderLayout.CENTER);
+        
+        // Botões para funções
+        JPanel painelBotoesFuncao = new JPanel(new FlowLayout(FlowLayout.RIGHT));
+        JButton btnAddFuncao = new JButton("Adicionar...");
+        JButton btnRemFuncao = new JButton("Remover");
+        btnAddFuncao.addActionListener(e -> adicionarFuncoes());
+        btnRemFuncao.addActionListener(e -> removerFuncaoSelecionada());
+        painelBotoesFuncao.add(btnAddFuncao);
+        painelBotoesFuncao.add(btnRemFuncao);
+        painel.add(painelBotoesFuncao, BorderLayout.SOUTH);
+        
+        return painel;
+    }
+    
+    /**
+     * NOVO: Cria painel melhorado para gerenciamento de disponibilidade
+     */
+    private JPanel criarPainelDisponibilidade() {
+        JPanel painel = new JPanel(new BorderLayout(5, 5));
+        
+        // Painel superior com dropdowns para adicionar disponibilidade
+        JPanel painelAdicionar = new JPanel(new FlowLayout(FlowLayout.LEFT));
+        painelAdicionar.setBorder(BorderFactory.createTitledBorder("Adicionar Disponibilidade"));
+        
+        painelAdicionar.add(new JLabel("Dia:"));
+        comboDiaSemana = new JComboBox<>(DIAS_SEMANA);
+        painelAdicionar.add(comboDiaSemana);
+        
+        painelAdicionar.add(Box.createHorizontalStrut(10));
+        
+        painelAdicionar.add(new JLabel("Horário:"));
+        comboHorario = new JComboBox<>(HORARIOS);
+        comboHorario.setEditable(true); // Permite entrada customizada
+        painelAdicionar.add(comboHorario);
+        
+        JButton btnAdicionar = new JButton("Adicionar");
+        btnAdicionar.addActionListener(e -> adicionarDisponibilidade());
+        painelAdicionar.add(btnAdicionar);
+        
+        painel.add(painelAdicionar, BorderLayout.NORTH);
+        
+        // Lista de disponibilidades atuais
+        listModelDisponibilidade = new DefaultListModel<>();
+        jListDisponibilidade = new JList<>(listModelDisponibilidade);
+        jListDisponibilidade.setSelectionMode(ListSelectionModel.MULTIPLE_INTERVAL_SELECTION);
+        
+        // Renderizador customizado para exibir disponibilidade de forma legível
+        jListDisponibilidade.setCellRenderer(new DefaultListCellRenderer() {
+            private static final long serialVersionUID = 1L;
+            
+            @Override
+            public Component getListCellRendererComponent(JList<?> list, Object value, int index,
+                    boolean isSelected, boolean cellHasFocus) {
+                Component c = super.getListCellRendererComponent(list, value, index, isSelected, cellHasFocus);
+                if (value instanceof HorarioDisponivel) {
+                    HorarioDisponivel h = (HorarioDisponivel) value;
+                    setText(h.getDiaDaSemana() + " às " + h.getHorario());
+                }
+                return c;
+            }
+        });
+        
+        JScrollPane scrollDisp = new JScrollPane(jListDisponibilidade);
+        scrollDisp.setBorder(BorderFactory.createTitledBorder("Horários Disponíveis"));
+        painel.add(scrollDisp, BorderLayout.CENTER);
+        
+        // Botão para remover disponibilidades
+        JPanel painelBotoesDisp = new JPanel(new FlowLayout(FlowLayout.RIGHT));
+        JButton btnRemoverDisp = new JButton("Remover Selecionados");
+        btnRemoverDisp.addActionListener(e -> removerDisponibilidadesSelecionadas());
+        painelBotoesDisp.add(btnRemoverDisp);
+        painel.add(painelBotoesDisp, BorderLayout.SOUTH);
+        
+        return painel;
+    }
+    
+    /**
+     * NOVO: Adiciona nova disponibilidade baseada nos dropdowns
+     */
+    private void adicionarDisponibilidade() {
+        String dia = (String) comboDiaSemana.getSelectedItem();
+        String horario = (String) comboHorario.getSelectedItem();
+        
+        if (dia != null && horario != null && !horario.trim().isEmpty()) {
+            horario = horario.trim();
+            
+            // Verifica se já existe
+            HorarioDisponivel novo = new HorarioDisponivel(dia, horario);
+            boolean jaExiste = false;
+            
+            for (int i = 0; i < listModelDisponibilidade.size(); i++) {
+                HorarioDisponivel existente = listModelDisponibilidade.getElementAt(i);
+                if (existente.getDiaDaSemana().equals(dia) && existente.getHorario().equals(horario)) {
+                    jaExiste = true;
+                    break;
+                }
+            }
+            
+            if (!jaExiste) {
+                listModelDisponibilidade.addElement(novo);
+                // Reseta os combos para facilitar próxima entrada
+                comboDiaSemana.setSelectedIndex(0);
+                comboHorario.setSelectedIndex(0);
+            } else {
+                JOptionPane.showMessageDialog(this, 
+                    "Esta disponibilidade já foi adicionada.", 
+                    "Duplicata", JOptionPane.WARNING_MESSAGE);
+            }
+        } else {
+            JOptionPane.showMessageDialog(this, 
+                "Por favor, selecione dia e horário.", 
+                "Campos Obrigatórios", JOptionPane.WARNING_MESSAGE);
+        }
+    }
+    
+    /**
+     * NOVO: Remove disponibilidades selecionadas
+     */
+    private void removerDisponibilidadesSelecionadas() {
+        List<HorarioDisponivel> selecionados = jListDisponibilidade.getSelectedValuesList();
+        if (!selecionados.isEmpty()) {
+            for (HorarioDisponivel h : selecionados) {
+                listModelDisponibilidade.removeElement(h);
+            }
+        } else {
+            JOptionPane.showMessageDialog(this, 
+                "Selecione uma ou mais disponibilidades para remover.", 
+                "Seleção Necessária", JOptionPane.WARNING_MESSAGE);
+        }
+    }
+    
+    /**
+     * Carrega dados do membro selecionado - ATUALIZADO para novos componentes
+     */
     private void carregarDadosDoMembroSelecionado() {
         Pessoa p = jListMembros.getSelectedValue();
         if (p != null) {
+            // Nome
             campoNome.setText(p.getNome());
+            
+            // Funções
             listModelFuncoes.clear();
             p.getFuncoes().stream().sorted().forEach(listModelFuncoes::addElement);
-        
-            String dispTexto = p.getDisponibilidade().stream()
-                            .map(d -> d.diaDaSemana + "-" + d.horario)
-                            .collect(Collectors.joining("\n"));
-            areaDisponibilidade.setText(dispTexto);
+            
+            // Disponibilidade - NOVA LÓGICA
+            listModelDisponibilidade.clear();
+            for (HorarioDisponivel h : p.getDisponibilidade()) {
+                listModelDisponibilidade.addElement(h);
+            }
+            
+            // Canta e toca
             checkCantaEToca.setSelected(p.isCantaEToca());
         }
     }
     
+    /**
+     * Limpa formulário - ATUALIZADO para novos componentes
+     */
     private void limparFormularioParaNovoMembro() {
         jListMembros.clearSelection();
         campoNome.setText("");
         listModelFuncoes.clear();
-        areaDisponibilidade.setText("");
+        listModelDisponibilidade.clear(); // NOVO
+        comboDiaSemana.setSelectedIndex(0); // NOVO
+        comboHorario.setSelectedIndex(0); // NOVO
         checkCantaEToca.setSelected(false);
         campoNome.requestFocus();
     }
     
+    /**
+     * Salva alterações - ATUALIZADO para novos componentes
+     */
     private void salvarAlteracoes() {
         String nome = campoNome.getText().trim();
         if (nome.isEmpty()) {
@@ -145,28 +325,34 @@ public class GerenciadorMembrosUI extends JDialog {
             // Forçar a atualização da lista se o nome mudar
             listModelPessoas.setElementAt(p, jListMembros.getSelectedIndex());
         }
+        
+        JOptionPane.showMessageDialog(this, "Membro salvo com sucesso!", "Sucesso", JOptionPane.INFORMATION_MESSAGE);
     }
 
+    /**
+     * Atualiza dados da pessoa - ATUALIZADO para novos componentes
+     */
     private void atualizarDadosPessoaPeloFormulario(Pessoa p) {
+        // Funções
         p.getFuncoes().clear();
         for (int i = 0; i < listModelFuncoes.size(); i++) {
             p.getFuncoes().add(listModelFuncoes.getElementAt(i));
         }
     
+        // Disponibilidade - NOVA LÓGICA
         p.getDisponibilidade().clear();
-        String[] linhasDisp = areaDisponibilidade.getText().split("\n");
-        for (String linha : linhasDisp) {
-            String dispTrimmed = linha.trim();
-            if (dispTrimmed.contains("-")) {
-                String[] partes = dispTrimmed.split("-", 2);
-                if (partes.length == 2 && !partes[0].isEmpty() && !partes[1].isEmpty()) {
-                    p.getDisponibilidade().add(new HorarioDisponivel(partes[0].trim(), partes[1].trim()));
-                }
-            }
+        for (int i = 0; i < listModelDisponibilidade.size(); i++) {
+            HorarioDisponivel h = listModelDisponibilidade.getElementAt(i);
+            p.getDisponibilidade().add(new HorarioDisponivel(h.getDiaDaSemana(), h.getHorario()));
         }
+        
+        // Canta e toca
         p.setCantaEToca(checkCantaEToca.isSelected());
     }
 
+    /**
+     * Exclui membro selecionado
+     */
     private void excluirMembro() {
         Pessoa p = jListMembros.getSelectedValue();
         if (p != null) {
@@ -178,6 +364,9 @@ public class GerenciadorMembrosUI extends JDialog {
         }
     }
 
+    /**
+     * Adiciona funções (mantido do código original)
+     */
     private void adicionarFuncoes() {
         Pessoa pSelecionada = jListMembros.getSelectedValue();
         if(pSelecionada == null) {
@@ -224,6 +413,9 @@ public class GerenciadorMembrosUI extends JDialog {
         }
     }
 
+    /**
+     * Remove função selecionada (mantido do código original)
+     */
     private void removerFuncaoSelecionada() {
         List<String> funcoesARemover = jListFuncoes.getSelectedValuesList();
         if (!funcoesARemover.isEmpty()) {
